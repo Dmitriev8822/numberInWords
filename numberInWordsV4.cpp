@@ -16,12 +16,21 @@ static const std::string arrUnitsDialect[10]{ "", "одна ", "две ", "тр�
 
 static const std::string arrValuesOfСurrency[10]{ "рублей", "рубль", "рубля", "рубля", "рубля", "рублей", "рублей", "рублей", "рублей", "рублей" };
 
-static const std::string arrValuesOfRanks[3][10]
+/*static const std::string arrValuesOfRanks[3][10]
 {
     {"", "", "", "", "", "", "", "", "", ""},
     {"тысяч ", "тысяча ", "тысячи ", "тысячи ", "тысячи ", "тысяч ", "тысяч ", "тысяч ", "тысяч ", "тысяч "},
     {"миллионов ", "миллион ", "миллиона ", "миллиона ", "миллиона ", "миллионов ", "миллионов ", "миллионов ", "миллионов ", "миллионов "}
+};*/
+
+static const std::string arrValuesOfRanks[3][10]
+{
+    {"", "", ""},
+    {"тысяча ", "тысячи ", "тысяч "},
+    {"миллион ", "миллиона ", "миллионов "}
 };
+
+static const int arrIndexValueOfRanks[10]{ 2, 0, 1, 1, 1, 2, 2, 2, 2, 2 };
 
  static const std::string* arrWords[3][3]
 {
@@ -43,30 +52,29 @@ int* splitNumber(int number);
 
 int main()
 {
-    // Устанавливаем локализацию на русский язык
     setlocale(LC_ALL, "Russian");
 
-    std::cout << "Число прописью: " << numberToWords(123123) << '\n';
-
-    int choice;
-    std::cout << "Выберите один из следующих вариантов:\n1. Использовать программу;\n2. Тестировать программу." << std::endl;
-    std::cin >> choice;
-    
-    if (choice - 1)
-        testNumberToWords();
-
+    int number{ 0 };
     std::cout << "Программа \"Число прописью\".\nДля выхода из программы введите -1.\n";
-
-    // Основной цикл программы
-    while (true)
+    
+    while (number != -1)
     {
-        int x = getNumber(); // Получаем корректное целочисленное значение
+        std::cout << "Введите число: ";
+        std::cin >> number;
 
-        if (x == -1) // Если введено -1, программа завершает работу
-            break;
+        if (std::cin.fail())
+        {
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Были получены некорректные данные." << '\n';
+            continue;
+        }
 
-        // Преобразуем число в пропись и выводим результат
-        std::cout << "Число прописью: " << numberToWords(x) << '\n';
+        if (number >= MIN_INPUT_VALUE && number <= MAX_INPUT_VALUE)
+            std::cout << "Число прописью: " << numberToWords(number) << '\n';
+        else
+            std::cout << "Число выходит за диапазон допустимых значений для ввода." << '\n';
+        
     }
 
     std::cout << "Программа завершена.\n";
@@ -96,13 +104,13 @@ static std::string rankToText(int num, int rank)
     if (middleDigit == 1)
     {
         result = arrTensDialect[num % 10];
-        result += arrValuesOfRanks[rank][0];
+        result += arrValuesOfRanks[rank][2];
         num /= 100;
         i = 0;
     }
     else
     {
-        result += arrValuesOfRanks[rank][num % 10];
+        result += arrValuesOfRanks[rank][arrIndexValueOfRanks[num % 10]];
         i = 2;
     }
 
@@ -128,7 +136,8 @@ std::string numberToWords(unsigned int number)
     result += addСurrencyValue(number % 100);
     for (int rank{0}; number; ++rank)
     {
-        result = rankToText(number % 1000, rank) + result;
+        int rankValue = number % 1000;
+        result = rankToText(rankValue, rank) + result;
         number /= 1000; 
     } 
 
