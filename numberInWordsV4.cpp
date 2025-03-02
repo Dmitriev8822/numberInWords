@@ -16,13 +16,6 @@ static const std::string arrUnitsDialect[10]{ "", "одна ", "две ", "тр�
 
 static const std::string arrValuesOfСurrency[10]{ "рублей", "рубль", "рубля", "рубля", "рубля", "рублей", "рублей", "рублей", "рублей", "рублей" };
 
-/*static const std::string arrValuesOfRanks[3][10]
-{
-    {"", "", "", "", "", "", "", "", "", ""},
-    {"тысяч ", "тысяча ", "тысячи ", "тысячи ", "тысячи ", "тысяч ", "тысяч ", "тысяч ", "тысяч ", "тысяч "},
-    {"миллионов ", "миллион ", "миллиона ", "миллиона ", "миллиона ", "миллионов ", "миллионов ", "миллионов ", "миллионов ", "миллионов "}
-};*/
-
 static const std::string arrValuesOfRanks[3][10]
 {
     {"", "", ""},
@@ -49,6 +42,7 @@ int getNumber();
 int reverseNumber(int number);
 void testNumberToWords();
 int* splitNumber(int number);
+int getNum(unsigned int& number);
 
 int main()
 {
@@ -56,7 +50,7 @@ int main()
 
     int number{ 0 };
     std::cout << "Программа \"Число прописью\".\nДля выхода из программы введите -1.\n";
-    
+
     while (number != -1)
     {
         std::cout << "Введите число: ";
@@ -98,6 +92,7 @@ static std::string rankToText(int num, int rank)
         return "";
 
     std::string result = "";
+
     int i;
 
     int middleDigit = num / 10 % 10;
@@ -114,10 +109,25 @@ static std::string rankToText(int num, int rank)
         i = 2;
     }
 
-    for (; i >= 0; --i)
+    for (; i >= 0; --i) // (; num; --i)
     {
         result = arrWords[rank][i][num % 10] + result;
         num /= 10;
+    }
+
+    return result;
+}
+
+int getNum(unsigned int& number)
+{
+    int result = 0;
+    int multiplier = 1;
+
+    for (int i = 0; i < 3; ++i) {
+        int digit = number % 10;
+        result += digit * multiplier;
+        number /= 10;
+        multiplier *= 10;
     }
 
     return result;
@@ -132,59 +142,15 @@ std::string numberToWords(unsigned int number)
 
     std::string result{ "" };
     std::string arrUse{ "" };
+    int num{ 0 };
+    num = getNum(number);
     
-    result += addСurrencyValue(number % 100);
-    for (int rank{0}; number; ++rank)
+    result += addСurrencyValue(num);
+    for (int rank{0}; rank < 3; ++rank)
     {
-        int rankValue = number % 1000;
-        result = rankToText(rankValue, rank) + result;
-        number /= 1000; 
+        result = rankToText(num, rank) + result;
+        num = getNum(number);
     } 
 
     return result;
-}
-
-
-int getNumber()
-{
-    int number{ 0 };
-
-    while (true)
-    {
-        try
-        {
-            std::cout << "Введите число: ";
-            std::cin >> number;
-
-            // Проверка на диапазон значений
-            if (number >= MIN_INPUT_VALUE && number <= MAX_INPUT_VALUE) // минимальное значение для ввода
-            {
-                // Если ввод успешен, выйти из цикла
-                if (std::cin.good()) 
-                {
-                    break; // Ввод корректен
-                }
-                else 
-                {
-                    throw std::invalid_argument("Ошибка ввода!");
-                }
-            }
-            else
-            {
-                throw std::out_of_range("Диапазон допустимых значений от 0 до 1,000,000,000.");
-            }
-        }
-        catch (const std::invalid_argument& e)
-        {
-            std::cout << e.what() << '\n';
-            // Очистить оставшийся ввод
-            while (std::cin.get() != '\n'); // Игнорируем оставшийся ввод
-        }
-        catch (const std::out_of_range& e)
-        {
-            std::cout << e.what() << '\n';
-        }
-    }
-
-    return number;
 }
