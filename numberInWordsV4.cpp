@@ -14,7 +14,7 @@ static const std::string arrUnits[10]{ "", "один ", "два ", "три ", "�
 
 static const std::string arrUnitsDialect[10]{ "", "одна ", "две ", "три ", "четыре ", "пять ", "шесть ", "семь ", "восемь ", "девять " };
 
-static const std::string arrValuesOfСurrency[10]{ "рублей", "рубль", "рубля", "рубля", "рубля", "рублей", "рублей", "рублей", "рублей", "рублей" };
+static const std::string arrValuesOfСurrency[10]{ "рубль", "рубля", "рублей" };
 
 static const std::string arrValuesOfRanks[3][10]
 {
@@ -23,7 +23,7 @@ static const std::string arrValuesOfRanks[3][10]
     {"миллион ", "миллиона ", "миллионов "}
 };
 
-static const int arrIndexValueOfRanks[10]{ 2, 0, 1, 1, 1, 2, 2, 2, 2, 2 };
+static const int arrIndexValuesOfRanks[10]{ 2, 0, 1, 1, 1, 2, 2, 2, 2, 2 };
 
  static const std::string* arrWords[3][3]
 {
@@ -36,12 +36,7 @@ constexpr int MAX_RANKS = 3; // размер числа
 constexpr int MIN_INPUT_VALUE = 0; // минимальное значение для ввода
 constexpr int MAX_INPUT_VALUE = 999999999; // максимальное значение для ввода
 
-static std::string digitsToText(int* ptr, int index);
 std::string numberToWords(unsigned int number);
-int getNumber();
-int reverseNumber(int number);
-void testNumberToWords();
-int* splitNumber(int number);
 int getNum(unsigned int& number);
 
 int main()
@@ -51,7 +46,7 @@ int main()
     int number{ 0 };
     std::cout << "Программа \"Число прописью\".\nДля выхода из программы введите -1.\n";
 
-    while (number != -1)
+    while (true)
     {
         std::cout << "Введите число: ";
         std::cin >> number;
@@ -63,6 +58,9 @@ int main()
             std::cout << "Были получены некорректные данные." << '\n';
             continue;
         }
+
+        if (number == -1)
+            break;
 
         if (number >= MIN_INPUT_VALUE && number <= MAX_INPUT_VALUE)
             std::cout << "Число прописью: " << numberToWords(number) << '\n';
@@ -79,14 +77,14 @@ int main()
 static std::string addСurrencyValue(int num)
 {
     if (num / 10 % 10 == 1)
-        return arrValuesOfСurrency[0];
+        return arrValuesOfСurrency[2];
 
-    return arrValuesOfСurrency[num % 10];
+    return arrValuesOfСurrency[arrIndexValuesOfRanks[num % 10]];
 }
 
 // Функция преобразования трехзначного числа в пропись
 // number — это само число, а digit указывает на разряд (0 — рубли, 1 — тысячи, 2 — миллионы)
-static std::string rankToText(int num, int rank)
+static std::string rankToText2(int num, int rank)
 {
     if (num == 0)
         return "";
@@ -105,7 +103,39 @@ static std::string rankToText(int num, int rank)
     }
     else
     {
-        result += arrValuesOfRanks[rank][arrIndexValueOfRanks[num % 10]];
+        result += arrValuesOfRanks[rank][arrIndexValuesOfRanks[num % 10]];
+        i = 2;
+    }
+
+    for (; i >= 0; --i) // (; num; --i)
+    {
+        result = arrWords[rank][i][num % 10] + result;
+        num /= 10;
+    }
+
+    return result;
+}
+
+static std::string rankToText(int num, int rank)
+{
+    //if (num == 0)
+    //    return "";
+
+    std::string result = "";
+
+    int i;
+
+    int middleDigit = num / 10 % 10;
+    if (middleDigit == 1)
+    {
+        result = arrTensDialect[num % 10];
+        result += arrValuesOfRanks[rank][2];
+        num /= 100;
+        i = 0;
+    }
+    else
+    {
+        result += arrValuesOfRanks[rank][arrIndexValuesOfRanks[num % 10]];
         i = 2;
     }
 
