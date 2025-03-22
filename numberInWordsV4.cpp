@@ -2,7 +2,6 @@
 #include <string>
 #include <limits> // для std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 #include <locale.h> // для setlocale(LC_ALL, "Russian");
-#include "test.cpp"
 
 static const std::string arrHundreds[10]{ "", "сто ", "двести ", "триста ", "четыреста ", "пятьсот ", "шестьсот ", "семьсот ", "восемьсот ", "девятьсот " };
 
@@ -14,22 +13,28 @@ static const std::string arrUnits[10]{ "", "один ", "два ", "три ", "�
 
 static const std::string arrUnitsDialect[10]{ "", "одна ", "две ", "три ", "четыре ", "пять ", "шесть ", "семь ", "восемь ", "девять " };
 
-static const std::string arrValuesOfСurrency[10]{ "рубль", "рубля", "рублей" };
+static const std::string arrValuesOfСurrency[10]{ "рублей", "рубль", "рубля", "рубля", "рубля", "рублей", "рублей", "рублей", "рублей", "рублей" };
 
 static const std::string arrValuesOfRanks[3][10]
 {
-    {"", "", ""},
-    {"тысяча ", "тысячи ", "тысяч "},
-    {"миллион ", "миллиона ", "миллионов "}
+    {"", "", "", "", "", "", "", "", "", ""},
+    {"тысяч ", "тысяча ", "тысячи ", "тысячи ", "тысячи ", "тысяч ", "тысяч ", "тысяч ", "тысяч ", "тысяч "},
+    {"миллионов ", "миллион ", "миллиона ", "миллиона ", "миллиона ", "миллионов ", "миллионов ", "миллионов ", "миллионов ", "миллионов "}
 };
 
-static const int arrIndexValuesOfRanks[10]{ 2, 0, 1, 1, 1, 2, 2, 2, 2, 2 };
-
- static const std::string* arrWords[3][3]
+/* static const std::string* arrWords[3][3]
 {
     {arrHundreds, arrTens, arrUnits},
     {arrHundreds, arrTens, arrUnitsDialect},
     {arrHundreds, arrTens, arrUnits}
+};
+*/
+
+static const std::string* arrWords[3][3]
+{
+    {arrUnits, arrTens, arrHundreds},
+    {arrUnitsDialect, arrTens, arrHundreds},
+    {arrUnits, arrTens, arrHundreds}
 };
 
 constexpr int MAX_RANKS = 3; // размер числа
@@ -38,6 +43,10 @@ constexpr int MAX_INPUT_VALUE = 999999999; // максимальное знач�
 
 std::string numberToWords(unsigned int number);
 int getNum(unsigned int& number);
+int getRank(int& number);
+static int countDigits(int number);
+int intPow(int base, int exp);
+static std::string rankToText(int rankValue, int rank);
 
 int main()
 {
@@ -74,92 +83,78 @@ int main()
     return 0;
 }
 
-static std::string addСurrencyValue(int num)
+static int countDigits(int number)
 {
-    if (num / 10 % 10 == 1)
-        return arrValuesOfСurrency[2];
-
-    return arrValuesOfСurrency[arrIndexValuesOfRanks[num % 10]];
-}
-
-// Функция преобразования трехзначного числа в пропись
-// number — это само число, а digit указывает на разряд (0 — рубли, 1 — тысячи, 2 — миллионы)
-static std::string rankToText2(int num, int rank)
-{
-    if (num == 0)
-        return "";
-
-    std::string result = "";
-
-    int i;
-
-    int middleDigit = num / 10 % 10;
-    if (middleDigit == 1)
+    int digitCounter{ 0 };
+    while (number)
     {
-        result = arrTensDialect[num % 10];
-        result += arrValuesOfRanks[rank][2];
-        num /= 100;
-        i = 0;
-    }
-    else
-    {
-        result += arrValuesOfRanks[rank][arrIndexValuesOfRanks[num % 10]];
-        i = 2;
-    }
-
-    for (; i >= 0; --i) // (; num; --i)
-    {
-        result = arrWords[rank][i][num % 10] + result;
-        num /= 10;
-    }
-
-    return result;
-}
-
-static std::string rankToText(int num, int rank)
-{
-    //if (num == 0)
-    //    return "";
-
-    std::string result = "";
-
-    int i;
-
-    int middleDigit = num / 10 % 10;
-    if (middleDigit == 1)
-    {
-        result = arrTensDialect[num % 10];
-        result += arrValuesOfRanks[rank][2];
-        num /= 100;
-        i = 0;
-    }
-    else
-    {
-        result += arrValuesOfRanks[rank][arrIndexValuesOfRanks[num % 10]];
-        i = 2;
-    }
-
-    for (; i >= 0; --i) // (; num; --i)
-    {
-        result = arrWords[rank][i][num % 10] + result;
-        num /= 10;
-    }
-
-    return result;
-}
-
-int getNum(unsigned int& number)
-{
-    int result = 0;
-    int multiplier = 1;
-
-    for (int i = 0; i < 3; ++i) {
-        int digit = number % 10;
-        result += digit * multiplier;
         number /= 10;
-        multiplier *= 10;
+        digitCounter++;
+    }
+    
+    return digitCounter;
+}
+
+int intPow(int base, int exp) 
+{
+    int result = 1;
+    while (exp > 0)
+    {
+        if (exp % 2 == 1)
+        {
+            result *= base;
+        }
+        base *= base;
+        exp /= 2;
+    }
+    return result;
+}
+
+int getRank(unsigned int& number)
+{
+    int rankValue{ 0 };
+    int pos{ countDigits(number) - 1 };
+    int rank{ pos / 3 };
+    while (((pos / 3) == rank) && number)
+    {
+        rankValue = rankValue + (number / intPow(10, pos) * intPow(10, pos % 3));
+        number %= intPow(10, pos);
+        pos--;
     }
 
+    return rankValue;
+}
+
+
+static std::string addСurrencyValue(int number)
+{
+    if (number / 10 % 10 == 1)
+        return arrValuesOfСurrency[0];
+
+    return arrValuesOfСurrency[number % 10];
+}
+
+static std::string rankToText(int rankValue, int rank)
+{
+    // std::cout << "rankToText(in). rankValue: " << rankValue << "; rank: " << rank << std::endl;
+    std::string result = "";
+    int digit{ 0 };
+
+    for (int posInRank{ 2 - (3 - countDigits(rankValue)) }; rankValue; posInRank--)
+    {
+        digit = rankValue / intPow(10, posInRank);
+        const std::string* arrUse = arrWords[rank][posInRank];
+        if ((posInRank % 2) && digit == 1)
+        {
+            result += arrTensDialect[rankValue % 10] + arrValuesOfRanks[rank][0];
+            return result;
+        }
+        result += arrUse[digit];
+        rankValue %= intPow(10, posInRank);
+    }
+
+    result += arrValuesOfRanks[rank][digit];
+    // std::cout << "rankToText(out). result: " << result << std::endl;
     return result;
 }
 
@@ -171,16 +166,16 @@ std::string numberToWords(unsigned int number)
         return "ноль рублей";
 
     std::string result{ "" };
-    std::string arrUse{ "" };
-    int num{ 0 };
-    num = getNum(number);
+    std::string currencyValue = addСurrencyValue(number);
     
-    result += addСurrencyValue(num);
-    for (int rank{0}; rank < 3; ++rank)
+    int rankValue{ 0 };
+    for (int rank{ (countDigits(number) - 1) / 3 }; number; rank--)
     {
-        result = rankToText(num, rank) + result;
-        num = getNum(number);
-    } 
-
+        // std::cout << "numberToWords(in). number: " << number << "; rank: " << rank << std::endl;
+        rankValue = getRank(number);
+        result += rankToText(rankValue, rank);
+        // std::cout << "numberToWords(out). result: " << result << std::endl;
+    }
+    result += currencyValue;
     return result;
 }
