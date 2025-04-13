@@ -22,14 +22,6 @@ static const std::string arrValuesOfRanks[3][10]
     {"миллионов ", "миллион ", "миллиона ", "миллиона ", "миллиона ", "миллионов ", "миллионов ", "миллионов ", "миллионов ", "миллионов "}
 };
 
-/* static const std::string* arrWords[3][3]
-{
-    {arrHundreds, arrTens, arrUnits},
-    {arrHundreds, arrTens, arrUnitsDialect},
-    {arrHundreds, arrTens, arrUnits}
-};
-*/
-
 static const std::string* arrWords[3][3]
 {
     {arrUnits, arrTens, arrHundreds},
@@ -42,11 +34,10 @@ constexpr int MIN_INPUT_VALUE = 0; // минимальное значение д
 constexpr int MAX_INPUT_VALUE = 999999999; // максимальное значение для ввода
 
 std::string numberToWords(unsigned int number);
-int getNum(unsigned int& number);
-int getRank(int& number);
 static int countDigits(int number);
 int intPow(int base, int exp);
 static std::string rankToText(int rankValue, int rank);
+void clearInputBuffer();
 
 int main()
 {
@@ -55,32 +46,41 @@ int main()
     int number{ 0 };
     std::cout << "Программа \"Число прописью\".\nДля выхода из программы введите -1.\n";
 
-    while (true)
-    {
-        std::cout << "Введите число: ";
-        std::cin >> number;
+    while (true) {
+        std::cout << "Введите число (-1 для выхода): ";
+        int number;
 
-        if (std::cin.fail())
-        {
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            std::cout << "Были получены некорректные данные." << '\n';
-            continue;
-        }
+        try {
+            if (!(std::cin >> number)) {
+                throw std::runtime_error("Некорректный ввод. Ожидается целое число.");
+            }
 
-        if (number == -1)
-            break;
+            if (number == -1) {
+                break;
+            }
 
-        if (number >= MIN_INPUT_VALUE && number <= MAX_INPUT_VALUE)
+            if (number < MIN_INPUT_VALUE || number > MAX_INPUT_VALUE) {
+                throw std::out_of_range("Число выходит за диапазон допустимых значений.");
+            }
+
             std::cout << "Число прописью: " << numberToWords(number) << '\n';
-        else
-            std::cout << "Число выходит за диапазон допустимых значений для ввода." << '\n';
-        
+        }
+        catch (const std::exception& e) {
+            clearInputBuffer();
+            std::cerr << "Ошибка: " << e.what() << '\n';
+        }
     }
 
     std::cout << "Программа завершена.\n";
 
+
     return 0;
+}
+
+void clearInputBuffer() 
+{
+    std::cin.clear();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
 static int countDigits(int number)
@@ -95,7 +95,7 @@ static int countDigits(int number)
     return digitCounter;
 }
 
-int intPow(int base, int exp) 
+static int intPow(int base, int exp)
 {
     int result = 1;
     while (exp > 0)
@@ -110,22 +110,6 @@ int intPow(int base, int exp)
     return result;
 }
 
-int getRank(unsigned int& number)
-{
-    int rankValue{ 0 };
-    int pos{ countDigits(number) - 1 };
-    int rank{ pos / 3 };
-    while (((pos / 3) == rank) && number)
-    {
-        rankValue = rankValue + (number / intPow(10, pos) * intPow(10, pos % 3));
-        number %= intPow(10, pos);
-        pos--;
-    }
-
-    return rankValue;
-}
-
-
 static std::string addСurrencyValue(int number)
 {
     if (number / 10 % 10 == 1)
@@ -136,7 +120,6 @@ static std::string addСurrencyValue(int number)
 
 static std::string rankToText(int rankValue, int rank)
 {
-    // std::cout << "rankToText(in). rankValue: " << rankValue << "; rank: " << rank << std::endl;
     std::string result = "";
     int digit{ 0 };
 
@@ -154,7 +137,6 @@ static std::string rankToText(int rankValue, int rank)
     }
 
     result += arrValuesOfRanks[rank][digit];
-    // std::cout << "rankToText(out). result: " << result << std::endl;
     return result;
 }
 
@@ -171,10 +153,9 @@ std::string numberToWords(unsigned int number)
     int rankValue{ 0 };
     for (int rank{ (countDigits(number) - 1) / 3 }; number; rank--)
     {
-        // std::cout << "numberToWords(in). number: " << number << "; rank: " << rank << std::endl;
-        rankValue = getRank(number);
+        rankValue = number / intPow(intPow(10, 3), rank);
+        number %= intPow(intPow(10, 3), rank);
         result += rankToText(rankValue, rank);
-        // std::cout << "numberToWords(out). result: " << result << std::endl;
     }
     result += currencyValue;
     return result;
