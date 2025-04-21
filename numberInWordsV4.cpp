@@ -29,7 +29,7 @@ static const std::string* arrWords[3][3]
     {arrUnits, arrTens, arrHundreds}
 };
 
-constexpr int MIN_INPUT_VALUE = 0; // минимальное значение для ввода
+constexpr int MIN_INPUT_VALUE = -1; // минимальное значение для ввода
 constexpr int MAX_INPUT_VALUE = 999999999; // максимальное значение для ввода
 
 std::string numberToWords(unsigned int number);
@@ -37,6 +37,10 @@ static int countDigits(int number);
 int intPow(int base, int exp);
 static std::string rankToText(int rankValue, int rank);
 void clearInputBuffer();
+int getNumber();
+std::string getValueOfRank(int num, int rank);
+
+const int GETTERRANKVALUE = intPow(10, 3);
 
 int main()
 {
@@ -47,37 +51,36 @@ int main()
 
     while (true) {
         std::cout << "Введите число (-1 для выхода): ";
-        int number;
+        int number{ 0 };
+        number = getNumber();
 
-        try { // ввод данных вынести в отдельную функцию
-            if (!(std::cin >> number)) 
-            {
-                throw std::runtime_error("Некорректный ввод. Ожидается целое число.");
-            }
-
-            if (number == -1) 
-            {
-                break;
-            }
-
-            if (number < MIN_INPUT_VALUE || number > MAX_INPUT_VALUE) 
-            {
-                throw std::out_of_range("Число выходит за диапазон допустимых значений.");
-            }
-
-            std::cout << "Число прописью: " << numberToWords(number) << '\n';
-        }
-        catch (const std::exception& e)
-        {
-            clearInputBuffer();
-            std::cerr << "Ошибка: " << e.what() << '\n';
-        }
+        if (number == -1)
+            break;
+        else if (number == -2)
+            continue;
+        else
+            std::cout << numberToWords(number) << "\n"; 
     }
 
     std::cout << "Программа завершена.\n";
 
-
     return 0;
+}
+
+int getNumber() {
+    long long number;
+    if (!(std::cin >> number)) {
+        clearInputBuffer();
+        std::cout << "Некорректный ввод. Ожидается целое число.\n";
+        return -2;
+    }
+
+    if (number >= MIN_INPUT_VALUE && number <= MAX_INPUT_VALUE) {
+        return static_cast<int>(number);
+    }
+
+    std::cout << "Число выходит за диапазон допустимых значений.\n";
+    return -2;
 }
 
 void clearInputBuffer() 
@@ -126,21 +129,29 @@ static std::string rankToText(int rankValue, int rank)
     std::string result = "";
     int digit{ 0 };
 
-    for (int posInRank{ 2 - (3 - countDigits(rankValue)) }; rankValue; posInRank--) // упростить 025
+    for (int posInRank{ 2 }; rankValue; posInRank--)
     {
         digit = rankValue / intPow(10, posInRank);
         const std::string* arrUse = arrWords[rank][posInRank];
-        if ((posInRank == 1) && (digit == 1)) // изменить на  posInRank == 1
+        if ((posInRank == 1) && (digit == 1))
         {
-            result += arrTensDialect[rankValue % 10] + arrValuesOfRanks[rank][0]; // arrUse
-            return result;
+            arrUse = arrTensDialect;
+            digit = rankValue % 10;
+            rankValue = 0;
         }
         result += arrUse[digit];
         rankValue %= intPow(10, posInRank);
     }
-
-    result += arrValuesOfRanks[rank][digit]; // вынести в отделную функцию
+    
     return result;
+}
+
+std::string getValueOfRank(int num, int rank)
+{
+    if (num / 10 == 1)
+        return arrValuesOfRanks[rank][0];
+
+    return arrValuesOfRanks[rank][num % 10];
 }
 
 // Функция преобразования целочисленного значения в пропись
@@ -153,12 +164,11 @@ std::string numberToWords(unsigned int number)
     std::string result{ "" };
     std::string currencyValue = addСurrencyValue(number);
     
-    int rankValue{ 0 }; // внести в цикл
     for (int rank{ (countDigits(number) - 1) / 3 }; number; rank--)
     {
-        rankValue = number / intPow(intPow(10, 3), rank); // constexpr intPow(10, 3)
-        number %= intPow(intPow(10, 3), rank);
-        result += rankToText(rankValue, rank);
+        int rankValue = number / intPow(GETTERRANKVALUE, rank);
+        number %= intPow(GETTERRANKVALUE, rank);
+        result += rankToText(rankValue, rank) + getValueOfRank(rankValue % intPow(10, 2), rank);
     }
     result += currencyValue;
     return result;
